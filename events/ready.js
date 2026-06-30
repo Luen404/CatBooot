@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const loadCommands = require('../Handler/commandHandler');
+const { REST, Routes } = require('discord.js');
 
 module.exports = {
     name: 'clientReady',

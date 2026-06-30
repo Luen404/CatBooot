@@ -5,15 +5,10 @@ module.exports = {
         if (!interaction.isChatInputCommand()) return;
 
         const command = client.commands.get(interaction.commandName);
-
-        console.log('1 command:', interaction.commandName);
-        console.log('2 found:', !!command);
-
         if (!command) return;
 
         try {
             await command.execute(interaction, client);
-            console.log('3 executed');
         } catch (err) {
             console.error(err);
 

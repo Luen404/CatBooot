@@ -9,34 +9,18 @@ module.exports = async (client) => {
 
     const commandsData = [];
 
-    //~for (const file of commandFiles) {
-        //const filePath = path.join(commandsPath, file);
-        //const command = require(filePath);
-
-        //if ('data' in command && 'execute' in command) {
-            //client.commands.set(command.data.name, command);
-            //commandsData.push(command.data.toJSON());
-        //} else {
-            //console.log(`${filePath}에 data || execute 미포함`);
-        //}
-    //}
     for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
+        const filePath = path.join(commandsPath, file);
+        const command = require(filePath);
 
-    if (!command.data || !command.execute) continue;
-
-    const json = command.data.toJSON();
-
-    if (!json.name || !json.description) {
-        console.log('❌ 잘못된 커맨드:', file, json);
-        continue;
+        if ('data' in command && 'execute' in command) {
+            client.commands.set(command.data.name, command);
+            commandsData.push(command.data.toJSON());
+        } else {
+            console.log(`${filePath}에 data || execute 미포함`);
+        }
     }
 
-    console.log('✅ 정상:', json.name);
-
-    commandsData.push(json);
-}
 
     const rest = new REST({ version: '10' }).setToken(process.env.DSC_T);
 
@@ -48,7 +32,6 @@ try {
     );
 
     console.log('등록 완료!');
-    console.log(res);
 } catch (error) {
     console.log('에러 발생:', error);
 }

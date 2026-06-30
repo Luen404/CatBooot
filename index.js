@@ -1,5 +1,4 @@
 const { Client, Collection, Events, GatewayIntentBits, IntentsBitField } = require('discord.js');
-const loadEvents = require('./Handler/eventHandler');
 const client = new Client({intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
@@ -11,5 +10,6 @@ require('dotenv').config()
 
 client.commands = new Collection();
 
-loadEvents(client);
+require('./Handler/eventHandler')(client);
+
 client.login(process.env.DSC_T);

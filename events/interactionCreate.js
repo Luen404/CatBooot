@@ -1,15 +1,19 @@
-module.exports = (client) => {
-    client.on('interactionCreate', async (interaction) => {
+module.exports = {
+    name: 'interactionCreate',
+
+    async execute(interaction, client) {
         if (!interaction.isChatInputCommand()) return;
 
         const command = client.commands.get(interaction.commandName);
-        if (!command) {
-            console.log('커맨드 없음:', interaction.commandName);
-            return;
-        }
+
+        console.log('1 command:', interaction.commandName);
+        console.log('2 found:', !!command);
+
+        if (!command) return;
 
         try {
             await command.execute(interaction, client);
+            console.log('3 executed');
         } catch (err) {
             console.error(err);
 
@@ -20,8 +24,5 @@ module.exports = (client) => {
                 });
             }
         }
-        console.log('1 command:', interaction.commandName);
-console.log('2 found:', !!command);
-console.log('3 executed');
-    });
+    }
 };

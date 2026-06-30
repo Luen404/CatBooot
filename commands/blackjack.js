@@ -1,13 +1,13 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { loadData, saveData, createDeck, calculateScore, handToString, activeGames, TURN_TIME, JOIN_TIME } = require('../utils/blackjacklogic');
+const { loadData, saveData, createDeck, calculateScore, handToString, activeGames, TURN_TIME, JOIN_TIME } = require('../utils/blackjackLogic');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('블랙잭')
         .setDescription('블랙잭')
         .addIntegerOption(option => 
-            option.setName('금액')
-                .setDescription('금액')
+            option.setName('참가비')
+                .setDescription('게임에 참여할떄 내는 비용이에요')
                 .setRequired(false)
         ),
     
@@ -17,7 +17,7 @@ module.exports = {
             return interaction.reply({ content: '이미 게임이 진행 중입니다.', ephemeral: true });
         }
 
-        let betAmount = interaction.options.getInteger('금액') || 1000;
+        let betAmount = interaction.options.getInteger('참가비') || 1000;
         if (betAmount < 100) betAmount = 100;
 
         activeGames.add(channelId);
@@ -145,8 +145,7 @@ module.exports = {
 
                 const turnCollector = lobbyMessage.createMessageComponentCollector({
                     filter: i => i.user.id === currentP.id,
-                    time: TURN_TIME,
-                    max: 1
+                    time: TURN_TIME
                 });
 
                 turnCollector.on('collect', async (btnInteraction) => {
@@ -160,6 +159,8 @@ module.exports = {
                             currentP.status = 'busted';
                             currentPlayerIndex++;
                             
+                            turnCollector.stop('finished');
+
                             await interaction.channel.send(`**${currentP.tag}** 버스트 탈락!`)
                                 .then(msg => setTimeout(() => msg.delete().catch(() => {}), 4000));
 
@@ -167,12 +168,14 @@ module.exports = {
                             await runTurn();
                         } else {
                             await updateGameScreen();
-                            turnCollector.stop('hit_continue');
                         }
                     } else if (btnInteraction.customId === 'bj_stand') {
                         currentP.status = 'stand';
                         currentPlayerIndex++;
+                        
                         await btnInteraction.deferUpdate();
+                        turnCollector.stop('finished');
+                        
                         await updateGameScreen();
                         await runTurn();
                     }
@@ -184,8 +187,6 @@ module.exports = {
                         currentPlayerIndex++;
                         await interaction.channel.send(`<@${currentP.id}> 시간 초과 자동 Stand`);
                         await updateGameScreen();
-                        await runTurn();
-                    } else if (reason === 'hit_continue') {
                         await runTurn();
                     }
                 });

@@ -47,7 +47,9 @@ module.exports = {
 
             const users = loadData();
             if (!users[userId]) {
-                users[userId] = { tag: btnInteraction.user.username, Ticket: 0, Point: 0 };
+                users[userId] = { tag: btnInteraction.member.displayName, Ticket: 0, Point: 0 };
+            } else {
+                users[userId].tag = btnInteraction.member.displayName;
             }
 
             if (users[userId].Point < betAmount) {
@@ -59,12 +61,11 @@ module.exports = {
 
             players.push({
                 id: userId,
-                tag: btnInteraction.user.username,
                 hand: [],
                 status: 'playing'
             });
 
-            const playerListStr = players.map((p, idx) => `${idx + 1}. **${p.tag}** (-${betAmount.toLocaleString()}P)`).join('\n');
+            const playerListStr = players.map((p, idx) => `${idx + 1}. <@${p.id}> (-${betAmount.toLocaleString()}P)`).join('\n');
             const updatedJoinEmbed = EmbedBuilder.from(joinEmbed).setFields({ name: `참여자 목록 (${players.length}명) | 총 풀: ${(players.length * betAmount).toLocaleString()}P`, value: playerListStr });
             
             await btnInteraction.update({ embeds: [updatedJoinEmbed] });
@@ -108,7 +109,7 @@ module.exports = {
                     if (p.status === 'busted') statusText = ' [탈락 / BUST]';
                     if (p.status === 'stand') statusText = ' [STAND]';
 
-                    playerStatusStr += `${turnMarker}**${p.tag}**: ${handToString(p.hand)} (점수: \`${score}\`)${statusText}\n`;
+                    playerStatusStr += `${turnMarker}<@${p.id}>: ${handToString(p.hand)} (점수: \`${score}\`)${statusText}\n`;
                 });
                 
                 gameEmbed.addFields({ name: '플레이어 현황', value: playerStatusStr });
@@ -161,7 +162,7 @@ module.exports = {
                             
                             turnCollector.stop('finished');
 
-                            await interaction.channel.send(`**${currentP.tag}** 버스트 탈락!`)
+                            await interaction.channel.send(`<@${currentP.id}> 버스트 탈락!`)
                                 .then(msg => setTimeout(() => msg.delete().catch(() => {}), 4000));
 
                             await updateGameScreen();
@@ -234,7 +235,7 @@ async function handleWinnerId(interaction, deck, dealerHand, players, channelId,
         winners.forEach(w => {
             users[w.id].Point += prizePerWinner;
         });
-        const winnerTags = winners.map(w => `**${w.tag}**`).join(', ');
+        const winnerTags = winners.map(w => `<@${w.id}>`).join(', ');
         summaryStr = `최종 승자: ${winnerTags}\n획득 상금: \`${prizePerWinner.toLocaleString()}P\` 지급 완료 (총 판돈: ${totalPot.toLocaleString()}P)`;
     } else {
         const returnAmount = Math.floor(betAmount * 0.5);

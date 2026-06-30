@@ -20,5 +20,8 @@ module.exports = (client) => {
                 });
             }
         }
+        console.log('1 command:', interaction.commandName);
+console.log('2 found:', !!command);
+console.log('3 executed');
     });
 };

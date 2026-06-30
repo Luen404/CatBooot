@@ -3,19 +3,24 @@ module.exports = (client) => {
         if (!interaction.isChatInputCommand()) return;
 
         const command = client.commands.get(interaction.commandName);
-        if (!command) return;
+
+        if (!command) {
+            console.log('커맨드 없음:', interaction.commandName);
+            return;
+        }
 
         try {
+            console.log('실행:', interaction.commandName);
             await command.execute(interaction, client);
-        } catch (error) {
-            console.error('커맨드 실행 오류:', error);
+        } catch (err) {
+            console.error(err);
 
             if (interaction.replied || interaction.deferred) return;
 
             await interaction.reply({
-                content: '명령어 실행  중 오류가 발생했습니다.',
+                content: '에러 발생',
                 ephemeral: true,
             });
         }
-    })
+    });
 };

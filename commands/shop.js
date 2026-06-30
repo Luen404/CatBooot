@@ -100,7 +100,6 @@ module.exports = {
 
         const shopMsg = createShopMessage(userID, allItems);
         const response = await interaction.reply({ ...shopMsg, fetchReply: true });
-eph
         const collector = response.createMessageComponentCollector({ time: 300000 });
 
         let selectedItem = null;

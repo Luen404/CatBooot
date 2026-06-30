@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { loadData, saveData, createDeck, calculateScore, handToString, activeGames, BET_AMOUNT, JOIN_TIME, TURN_TIME } = require('../utils/blackjackLogic');
+const { loadData, saveData, createDeck, calculateScore, handToString, activeGames, BET_AMOUNT, JOIN_TIME, TURN_TIME } = require('../utils/blackjacklogic');
 
 module.exports = {
     data: new SlashCommandBuilder()

@@ -23,16 +23,20 @@ module.exports = async (client) => {
 
     const rest = new REST({ version: '10' }).setToken(process.env.DSC_T);
 
-    try {
-        console.log('슬래시 커맨드 등록 시작');
+    console.log('슬래시 커맨드 등록 시작');
+console.log('commandsData:', commandsData.length);
+console.log('client id:', process.env.CLIENT_ID);
+console.log('guild id:', process.env.GUILD_ID);
 
-        await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-            { body: commandsData },
-        );
+try {
+    const res = await rest.put(
+        Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+        { body: commandsData },
+    );
 
-        console.log('슬래시 커맨드 등록 완료');
-    } catch (error) {
-        console.log('슬래시 커맨드 등록중 오류발생', error);
-    }
-};
+    console.log('등록 완료!');
+    console.log(res);
+} catch (error) {
+    console.log('에러 발생:', error);
+}
+}

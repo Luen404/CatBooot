@@ -13,7 +13,7 @@ module.exports = (client) => {
             if (interaction.replied || interaction.deferred) return;
 
             await interaction.reply({
-                content: '명령어 실행 중 오류가 발생했습니다.',
+                content: '명령어 실행  중 오류가 발생했습니다.',
                 ephemeral: true,
             });
         }

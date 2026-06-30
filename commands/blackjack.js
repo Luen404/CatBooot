@@ -7,7 +7,7 @@ module.exports = {
         .setDescription('블랙잭')
         .addIntegerOption(option => 
             option.setName('참가비')
-                .setDescription('게임에 참여할떄 내는 비용이에요')
+                .setDescription('게임에 참여할떄 내는 비용')
                 .setRequired(false)
         ),
     

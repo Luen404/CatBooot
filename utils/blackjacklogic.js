@@ -44,7 +44,7 @@ module.exports = {
     createDeck,
     calculateScore,
     handToString,
-    activeGames: new Set(), // 채널별 중복 실행 방지 공유 Set
+    activeGames: new Set(),
     BET_AMOUNT: 1000,
     JOIN_TIME: 30000,
     TURN_TIME: 30000

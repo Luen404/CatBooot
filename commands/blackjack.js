@@ -78,7 +78,7 @@ module.exports = {
 
             const deck = createDeck();
             const dealerHand = [deck.pop(), deck.pop()];
-            const totalPot = players.length * betAmount;
+            const totalPot = (players.length * betAmount) + betAmount;
 
             for (const p of players) {
                 p.hand.push(deck.pop(), deck.pop());

@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const usersPath = path.join(__dirname, '../data/users.json');
-const percentPath = path.join(__dirname, '../data/Percent.json');
+const configPath = path.join(__dirname, '../data/Percent.json');
 const inventoryPath = path.join(__dirname, '../data/Inventory.json');
 
 function readJson(filePath, defaultData = {}) {
@@ -34,7 +34,7 @@ module.exports = {
         const userDisplayName = interaction.member.displayName;
 
         const users = readJson(usersPath, {});
-        const percentData = readJson(percentPath, { items: [] });
+        const percentData = readJson(configPath, { items: [] });
 
         if (percentData.items.length === 0) {
             return interaction.reply({ content: "현재 등록된 뽑기 상품이 없습니다. 관리자 메뉴에서 먼저 등록해주세요.", ephemeral: true });
@@ -83,20 +83,29 @@ module.exports = {
                 }); 
             } 
             
-            const resultKey = `${pickedItem.name} (${pickedItem.chance}%)`;
-            rolledCounts[resultKey] = (rolledCounts[resultKey] || 0) + 1;
+            const resultKey = pickedItem.id;
+            if (!rolledCounts[resultKey]) {
+                rolledCounts[resultKey] = {
+                    name: pickedItem.name,
+                    chance: pickedItem.chance,
+                    count: 0
+                };
+            }
+            rolledCounts[resultKey].count++;
         } 
         
         saveJson(usersPath, users); 
         saveJson(inventoryPath, inventory);
 
-        const resultList = Object.entries(rolledCounts).map(([itemText, itemCount]) => {
-            return `${itemText} x ${itemCount}개`;
+        const sortedResults = Object.values(rolledCounts).sort((a, b) => b.chance - a.chance);
+
+        const resultList = sortedResults.map(item => {
+            return `${item.name} (${item.chance}%) x ${item.count}개`;
         });
 
         const embed = { 
             title: "가챠 결과", 
-            description: `${userDisplayName}님의 뽑기 결과\n\n` + resultList.join("\n"), 
+            description: `${userDisplayName}님의 뽑기 결과 (총 ${count}회 진행)\n\n` + resultList.join("\n"), 
             color: 0x5865F2, 
             footer: { text: `남은 뽑기권 : ${users[userID].Ticket}장` } 
         }; 

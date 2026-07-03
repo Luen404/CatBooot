@@ -15,7 +15,7 @@ function saveJson(filePath, data) {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 4), 'utf-8');
 }
 
-const voiceConnections = new Map();
+const voiceTimers = new Map();
 
 module.exports = {
     name: 'voiceStateUpdate',
@@ -26,19 +26,11 @@ module.exports = {
         const userTag = newState.member.user.tag;
 
         if (!oldState.channelId && newState.channelId) {
-            voiceConnections.set(userId, Date.now());
-        } 
-        
-        else if (oldState.channelId && !newState.channelId) {
-            const joinTime = voiceConnections.get(userId);
-            if (!joinTime) return;
+            if (voiceTimers.has(userId)) {
+                clearInterval(voiceTimers.get(userId));
+            }
 
-            const totalTimeMs = Date.now() - joinTime;
-            const totalMinutes = Math.floor(totalTimeMs / 60000);
-
-            voiceConnections.delete(userId);
-
-            if (totalMinutes > 0) {
+            const intervalId = setInterval(() => {
                 const config = readJson(configPath, { messagePoint: 1, voicePoint: 5 });
                 if (config.voicePoint <= 0) return;
 
@@ -56,8 +48,18 @@ module.exports = {
                     users[userId].Point = 0;
                 }
 
-                users[userId].Point += (totalMinutes * config.voicePoint);
+                users[userId].Point += config.voicePoint;
                 saveJson(usersPath, users);
+            }, 60000);
+
+            voiceTimers.set(userId, intervalId);
+        } 
+        
+        else if (oldState.channelId && !newState.channelId) {
+            const intervalId = voiceTimers.get(userId);
+            if (intervalId) {
+                clearInterval(intervalId);
+                voiceTimers.delete(userId);
             }
         }
     }

@@ -10,9 +10,9 @@ const path = require('path');
 const shopPath = path.join(__dirname, '../data/Shop.json');
 const percentPath = path.join(__dirname, '../data/Percent.json');
 const invPath = path.join(__dirname, '../data/Inventory.json');
-const moneyPath = path.join(__dirname, '../data/users.json');
+const usersPath = path.join(__dirname, '../data/users.json');
 
-function readJSON(filePath, defaultData = { items: [] }) {
+function readJSON(filePath, defaultData = {}) {
     if (!fs.existsSync(filePath)) {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
         fs.writeFileSync(filePath, JSON.stringify(defaultData, null, 4), 'utf-8');
@@ -45,11 +45,18 @@ module.exports = {
         });
 
         const invData = readJSON(invPath, {});
-        const userInventory = invData[userId] || {};
+        const userInventoryArray = invData[userId] || [];
+
+        const itemCounts = {};
+        userInventoryArray.forEach(item => {
+            if (item && item.itemId) {
+                itemCounts[item.itemId] = (itemCounts[item.itemId] || 0) + 1;
+            }
+        });
 
         const sellableItems = [];
-        for (const [itemId, quantity] of Object.entries(userInventory)) {
-            if (quantity > 0 && itemMasterMap.has(itemId)) {
+        for (const [itemId, quantity] of Object.entries(itemCounts)) {
+            if (itemMasterMap.has(itemId)) {
                 const master = itemMasterMap.get(itemId);
                 if (master.sellPrice > 0) {
                     sellableItems.push({
@@ -64,7 +71,7 @@ module.exports = {
 
         if (sellableItems.length === 0) {
             return interaction.reply({ 
-                content: "현재 인벤토리에 판매 가능한 아이템이 없습니다.", 
+                content: "현재 인벤토리에 판매 가능한 아이템이 없습니다", 
                 ephemeral: true 
             });
         }
@@ -104,24 +111,32 @@ module.exports = {
             const targetItemId = i.values[0];
             
             const latestInv = readJSON(invPath, {});
-            const latestUserInv = latestInv[userId] || {};
-            const currentQuantity = latestUserInv[targetItemId] || 0;
+            const latestUserInvArray = latestInv[userId] || [];
+            
+            const currentQuantity = latestUserInvArray.filter(item => item.itemId === targetItemId).length;
 
             if (currentQuantity <= 0) {
-                return i.update({ content: "그새 아이템 개수가 변동되었거나 보유하고 있지 않습니다.", embeds: [], components: [] });
+                return i.update({ content: "아이템 개수가 변동되었거나 보유하고 있지 않습니다.", embeds: [], components: [] });
             }
 
             const itemInfo = itemMasterMap.get(targetItemId);
             const totalEarned = itemInfo.sellPrice * currentQuantity;
 
-            delete latestUserInv[targetItemId];
-            latestInv[userId] = latestUserInv;
+            latestInv[userId] = latestUserInvArray.filter(item => item.itemId !== targetItemId);
             saveJSON(invPath, latestInv);
 
-            const moneyData = readJSON(moneyPath, {});
-            const currentMoney = moneyData[userId] || 0;
-            moneyData[userId] = currentMoney + totalEarned;
-            saveJSON(moneyPath, moneyData);
+            const usersData = readJSON(usersPath, {});
+            if (!usersData[userId]) {
+                usersData[userId] = {
+                    tag: interaction.user.username,
+                    Ticket: 0,
+                    Point: 0
+                };
+            }
+            
+            const currentMoney = usersData[userId].Point || 0;
+            usersData[userId].Point = currentMoney + totalEarned;
+            saveJSON(usersPath, usersData);
 
             collector.stop();
             await i.update({

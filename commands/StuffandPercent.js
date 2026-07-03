@@ -41,7 +41,7 @@ module.exports = {
 
             const embed = {
                 title: "뽑기 설정 컨트롤 패널",
-                description: `${statusMessage}\n\n현재 총 확률 합계: \`${parseFloat(totalChance.toFixed(4))}%\` (정확히 **100%**여야 가챠가 정상 작동합니다.)`,
+                description: `${statusMessage}\n\n현재 총 확률 합계: ${parseFloat(totalChance.toFixed(4))}% (정확히 100%여야 가챠가 정상 작동합니다.)`,
                 color: 0x5865F2,
                 fields: config.items.map(i => ({ 
                     name: i.name, 
@@ -251,7 +251,7 @@ module.exports = {
                 await i.update({
                     embeds: [{
                         title: '새 품목 추가',
-                        description: "추가할 품목의 이름, 확률, 판매가를 /로 구분해서 채팅창에 전송해주세요.\n(예시: `냥민의 초희귀 칭호/0.1/5000`)\n*형식: 이름/확률/판매가*",
+                        description: "추가할 품목의 이름, 확률, 판매가를 /로 구분해서 채팅창에 전송해주세요.\n(예시: 냥민의 초희귀 칭호/0.1/5000)\n형식: 이름/확률/판매가",
                         color: 0x57F287
                     }],
                     components: []
@@ -267,7 +267,7 @@ module.exports = {
                     const parts = content.split('/');
                     if (parts.length !== 3) {
                         await i.editReply({
-                            embeds: [{ title: "추가 실패", description: "형식이 올바르지 않아 추가가 취소되었습니다. `이름/확률/판매가` 형태로 전송해야 합니다.", color: 0xED4245 }],
+                            embeds: [{ title: "추가 실패", description: "형식이 올바르지 않아 추가가 취소되었습니다. 이름/확률/판매가 형태로 전송해야 합니다.", color: 0xED4245 }],
                             components: []
                         });
                         setTimeout(async () => {

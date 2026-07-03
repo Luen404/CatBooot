@@ -60,10 +60,11 @@ async function drawTableImage(dealerHand, players, hideDealerCard = false) {
         const startY = 180 + (pIdx * 130);
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 16px Arial';
-        ctx.fillText(`--- PLAYER: ${p.id.slice(0,5)}... (${p.status.toUpperCase()}) ---`, 30, startY - 10);
+        ctx.fillText(`--- ${p.name} (${p.status.toUpperCase()}) ---`, 30, startY - 10);
 
         p.hand.forEach((card, cIdx) => {
-            drawCard(30 + (cIdx * 85), startY, card.suit, card.rank, false);
+            const isBusted = p.status === 'busted';
+            drawCard(30 + (cIdx * 85), startY, card.suit, card.rank, isBusted);
         });
     });
 
@@ -126,10 +127,11 @@ module.exports = {
             }
 
             const users = loadData();
+            const displayName = btnInteraction.member.displayName;
             if (!users[userId]) {
-                users[userId] = { tag: btnInteraction.member.displayName, Ticket: 0, Point: 0 };
+                users[userId] = { tag: displayName, Ticket: 0, Point: 0 };
             } else {
-                users[userId].tag = btnInteraction.member.displayName;
+                users[userId].tag = displayName;
             }
 
             if (users[userId].Point < betAmount) {
@@ -141,6 +143,7 @@ module.exports = {
 
             players.push({
                 id: userId,
+                name: displayName,
                 hand: [],
                 status: 'playing'
             });
@@ -157,7 +160,7 @@ module.exports = {
                 return interaction.editReply({ content: '참가자가 없어 게임이 취소되었습니다.', embeds: [], components: [] });
             }
 
-            await interaction.editReply({ content: '모집이 마감되었습니다. 게임을 시작합니다.', components: [] });
+            await lobbyMessage.delete().catch(() => {});
 
             const deck = createDeck();
             const dealerHand = [deck.pop(), deck.pop()];
@@ -190,7 +193,9 @@ module.exports = {
                 }
 
                 if (!gameMessage) {
-                    gameMessage = await interaction.channel.send({ content, files: [imageAttachment], components });
+                    const mentions = players.map(p => `<@${p.id}>`).join(' ');
+                    const startContent = `${mentions}\n${content}`;
+                    gameMessage = await interaction.channel.send({ content: startContent, files: [imageAttachment], components });
                 } else {
                     await gameMessage.edit({ content, files: [imageAttachment], components });
                 }
@@ -231,9 +236,6 @@ module.exports = {
                             currentPlayerIndex++;
                             
                             turnCollector.stop('finished');
-
-                            await interaction.channel.send(`<@${currentP.id}> 버스트 탈락!`)
-                                .then(msg => setTimeout(() => msg.delete().catch(() => {}), 4000));
 
                             await updateGameScreen();
                             await runTurn();

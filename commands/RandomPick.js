@@ -48,7 +48,9 @@ module.exports = {
 
         const inventory = readJson(inventoryPath, {}); 
         if (!inventory[userID]) inventory[userID] = []; 
-        const resultList = []; 
+        
+        const rolledCounts = {}; 
+
         for (let i = 0; i < count; i++) { 
             const randomNumber = Math.random() * 100; 
             
@@ -81,14 +83,21 @@ module.exports = {
                 }); 
             } 
             
-            resultList.push(`${pickedItem.name} (${pickedItem.chance}%)`); 
+            const resultKey = `${pickedItem.name} (${pickedItem.chance}%)`;
+            rolledCounts[resultKey] = (rolledCounts[resultKey] || 0) + 1;
         } 
         
         saveJson(usersPath, users); 
         saveJson(inventoryPath, inventory);
+
+        const resultList = Object.entries(rolledCounts).map(([itemText, itemCount]) => {
+            return `${itemText} x ${itemCount}개`;
+        });
+
         const embed = { 
             title: "가챠 결과", 
-            description: `${userDisplayName}님의 뽑기 결과\n\n` + resultList.join("\n"), color: 0x5865F2, 
+            description: `${userDisplayName}님의 뽑기 결과\n\n` + resultList.join("\n"), 
+            color: 0x5865F2, 
             footer: { text: `남은 뽑기권 : ${users[userID].Ticket}장` } 
         }; 
             

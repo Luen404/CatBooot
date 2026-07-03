@@ -1,4 +1,4 @@
-const { createCanvas } = require('canvas');
+const { createCanvas, registerFont} = require('canvas');
 const { AttachmentBuilder } = require('discord.js');
 const { calculateScore } = require('./blackjacklogic');
 registerFont(path.join(__dirname, 'fonts', 'NanumGothic.ttf'), { family: 'NanumGothic' });

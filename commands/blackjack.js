@@ -1,5 +1,74 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
+const { createCanvas } = require('canvas');
 const { loadData, saveData, createDeck, calculateScore, handToString, activeGames, TURN_TIME, JOIN_TIME } = require('../utils/blackjacklogic');
+
+async function drawTableImage(dealerHand, players, hideDealerCard = false) {
+    const canvasWidth = 600;
+    const canvasHeight = 180 + (players.length * 130);
+    const canvas = createCanvas(canvasWidth, canvasHeight);
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#1a472a';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    function drawCard(x, y, suit, rank, isHidden = false) {
+        ctx.fillStyle = isHidden ? '#2c3e50' : '#ffffff';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        
+        ctx.beginPath();
+        ctx.roundRect(x, y, 70, 100, 8);
+        ctx.fill();
+        ctx.stroke();
+
+        if (isHidden) {
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 10, y + 10, 50, 80);
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillText('?', x + 28, y + 58);
+            return;
+        }
+
+        const isRed = (suit === '♥' || suit === '♦' || suit === 'H' || suit === 'D');
+        ctx.fillStyle = isRed ? '#e74c3c' : '#2c3e50';
+        
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText(rank, x + 8, y + 25);
+
+        ctx.font = '35px Arial';
+        let displaySuit = suit;
+        if (suit === 'S') displaySuit = '♠';
+        if (suit === 'H') displaySuit = '♥';
+        if (suit === 'D') displaySuit = '♦';
+        if (suit === 'C') displaySuit = '♣';
+
+        ctx.fillText(displaySuit, x + 18, y + 65);
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText('--- DEALER HAND ---', 30, 35);
+    
+    dealerHand.forEach((card, idx) => {
+        const isHidden = (hideDealerCard && idx === 1);
+        drawCard(30 + (idx * 85), 50, card.suit, card.rank, isHidden);
+    });
+
+    players.forEach((p, pIdx) => {
+        const startY = 180 + (pIdx * 130);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText(`--- PLAYER: ${p.id.slice(0,5)}... (${p.status.toUpperCase()}) ---`, 30, startY - 10);
+
+        p.hand.forEach((card, cIdx) => {
+            drawCard(30 + (cIdx * 85), startY, card.suit, card.rank, false);
+        });
+    });
+
+    return new AttachmentBuilder(canvas.toBuffer(), { name: 'blackjack-table.png' });
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -103,36 +172,14 @@ module.exports = {
 
             async function updateGameScreen(isFinal = false) {
                 const currentP = players[currentPlayerIndex];
-                const gameEmbed = new EmbedBuilder()
-                    .setTitle(`블랙잭 테이블 (총 상금: ${totalPot.toLocaleString()}P)`)
-                    .setColor(isFinal ? 0x2B2D31 : 0x5865F2);
+                const hideDealerCard = !isFinal;
+                const imageAttachment = await drawTableImage(dealerHand, players, hideDealerCard);
 
-                if (isFinal) {
-                    gameEmbed.addFields({ name: '딜러의 패', value: `${handToString(dealerHand)}\n점수: \`${calculateScore(dealerHand)}\`` });
-                } else {
-                    gameEmbed.addFields({ name: '딜러의 패', value: `\`${dealerHand[0].suit}${dealerHand[0].rank}\`, \`❔\`` });
-                }
-
-                let playerStatusStr = '';
-                players.forEach((p, idx) => {
-                    const score = calculateScore(p.hand);
-                    let turnMarker = '';
-                    let statusText = '';
-
-                    if (!isFinal && idx === currentPlayerIndex) turnMarker = '▶️ ';
-                    if (p.status === 'busted') statusText = ' [탈락 / BUST]';
-                    if (p.status === 'stand') statusText = ' [STAND]';
-
-                    playerStatusStr += `${turnMarker}<@${p.id}>: ${handToString(p.hand)} (점수: \`${score}\`)${statusText}\n`;
-                });
-                
-                gameEmbed.addFields({ name: '플레이어 현황', value: playerStatusStr });
-
-                let content = `판돈 ${betAmount.toLocaleString()}P 게임 진행 중`;
+                let content = `판돈 ${betAmount.toLocaleString()}P 게임 진행 중 (총 상금: ${totalPot.toLocaleString()}P)`;
                 let components = [];
 
                 if (!isFinal && currentP) {
-                    gameEmbed.setDescription(`현재 턴: <@${currentP.id}> 선택 대기 중... (${TURN_TIME / 1000}초)`);
+                    content += `\n현재 턴: <@${currentP.id}> 선택 대기 중... (${TURN_TIME / 1000}초)`;
                     const row = new ActionRowBuilder().addComponents(
                         new ButtonBuilder().setCustomId('bj_hit').setLabel('Hit (카드 받기)').setStyle(ButtonStyle.Success),
                         new ButtonBuilder().setCustomId('bj_stand').setLabel('Stand (멈추기)').setStyle(ButtonStyle.Danger)
@@ -143,9 +190,9 @@ module.exports = {
                 }
 
                 if (!gameMessage) {
-                    gameMessage = await interaction.channel.send({ content, embeds: [gameEmbed], components });
+                    gameMessage = await interaction.channel.send({ content, files: [imageAttachment], components });
                 } else {
-                    await gameMessage.edit({ content, embeds: [gameEmbed], components });
+                    await gameMessage.edit({ content, files: [imageAttachment], components });
                 }
             }
 

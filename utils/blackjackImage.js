@@ -1,6 +1,7 @@
 const { createCanvas, registerFont} = require('canvas');
 const { AttachmentBuilder } = require('discord.js');
 const { calculateScore } = require('./blackjacklogic');
+const path = require('path');
 registerFont(path.join(__dirname, 'fonts', 'NanumGothic.ttf'), { family: 'NanumGothic' });
 
 async function drawTableImage(dealerHand, players, hideDealerCard = false, betAmount = 1000) {

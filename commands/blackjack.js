@@ -1,75 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require('discord.js');
-const { createCanvas } = require('canvas');
-const { loadData, saveData, createDeck, calculateScore, handToString, activeGames, TURN_TIME, JOIN_TIME } = require('../utils/blackjacklogic');
-
-async function drawTableImage(dealerHand, players, hideDealerCard = false) {
-    const canvasWidth = 600;
-    const canvasHeight = 180 + (players.length * 130);
-    const canvas = createCanvas(canvasWidth, canvasHeight);
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#1a472a';
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    function drawCard(x, y, suit, rank, isHidden = false) {
-        ctx.fillStyle = isHidden ? '#2c3e50' : '#ffffff';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        
-        ctx.beginPath();
-        ctx.roundRect(x, y, 70, 100, 8);
-        ctx.fill();
-        ctx.stroke();
-
-        if (isHidden) {
-            ctx.strokeStyle = '#ecf0f1';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(x + 10, y + 10, 50, 80);
-            ctx.font = '20px Arial';
-            ctx.fillStyle = '#ecf0f1';
-            ctx.fillText('?', x + 28, y + 58);
-            return;
-        }
-
-        const isRed = (suit === '♥' || suit === '♦' || suit === 'H' || suit === 'D');
-        ctx.fillStyle = isRed ? '#e74c3c' : '#2c3e50';
-        
-        ctx.font = 'bold 20px Arial';
-        ctx.fillText(rank, x + 8, y + 25);
-
-        ctx.font = '35px Arial';
-        let displaySuit = suit;
-        if (suit === 'S') displaySuit = '♠';
-        if (suit === 'H') displaySuit = '♥';
-        if (suit === 'D') displaySuit = '♦';
-        if (suit === 'C') displaySuit = '♣';
-
-        ctx.fillText(displaySuit, x + 18, y + 65);
-    }
-
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText('--- DEALER HAND ---', 30, 35);
-    
-    dealerHand.forEach((card, idx) => {
-        const isHidden = (hideDealerCard && idx === 1);
-        drawCard(30 + (idx * 85), 50, card.suit, card.rank, isHidden);
-    });
-
-    players.forEach((p, pIdx) => {
-        const startY = 180 + (pIdx * 130);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText(`--- ${p.name} (${p.status.toUpperCase()}) ---`, 30, startY - 10);
-
-        p.hand.forEach((card, cIdx) => {
-            const isBusted = p.status === 'busted';
-            drawCard(30 + (cIdx * 85), startY, card.suit, card.rank, isBusted);
-        });
-    });
-
-    return new AttachmentBuilder(canvas.toBuffer(), { name: 'blackjack-table.png' });
-}
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { loadData, saveData, createDeck, calculateScore, activeGames, TURN_TIME, JOIN_TIME } = require('../utils/blackjacklogic');
+const { drawTableImage } = require('../utils/blackjackImage');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -102,7 +33,7 @@ module.exports = {
 
         const joinRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('bj_join').setLabel('참여하기').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('bj_start_now').setLabel('게임 시작 (방장 전용)').setStyle(ButtonStyle.Success)
+            new ButtonBuilder().setCustomId('bj_start_now').setLabel('게임 시작').setStyle(ButtonStyle.Success)
         );
 
         const lobbyMessage = await interaction.reply({ embeds: [joinEmbed], components: [joinRow], fetchReply: true });
@@ -176,8 +107,7 @@ module.exports = {
             async function updateGameScreen(isFinal = false) {
                 const currentP = players[currentPlayerIndex];
                 const hideDealerCard = !isFinal;
-                const imageAttachment = await drawTableImage(dealerHand, players, hideDealerCard);
-
+                const imageAttachment = await drawTableImage(dealerHand, players, hideDealerCard, betAmount);
                 let content = `판돈 ${betAmount.toLocaleString()}P 게임 진행 중 (총 상금: ${totalPot.toLocaleString()}P)`;
                 let components = [];
 

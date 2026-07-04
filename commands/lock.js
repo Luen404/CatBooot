@@ -2,7 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } =
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('타임아웃')
+        .setName('옥문강')
         .setDescription('유저를 일정 시간 동안 타임아웃 처리합니다.')
         .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
         .addUserOption(option =>
@@ -39,12 +39,13 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setTitle('옥문강')
-                .setDescription(`${target.user.tag}님이 **옥문강**에 갇혔습니다. ${durationInSeconds}초 뒤 해방`)
+                .setDescription(`${target}님이 **옥문강**에 갇혔습니다. ${durationInSeconds}초 뒤 해방`)
+                .setColor('Orange')
                 .setImage('https://i.imgur.com/Yi9gZQO.gif');
 
             if (reason) {
                 embed.addFields([
-                    { name: '사유 | ', value: reason }
+                    { name: '사유', value: reason }
                 ]);
             }
 

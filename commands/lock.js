@@ -39,7 +39,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setTitle('옥문강')
                 .setDescription(`${target.user.tag}님이 옥문강에 갇혔습니다. ${durationInSeconds}초 뒤 해방`)
-                .addFields({ value: reason })
+                .addFields({ name: '', value: reason })
                 .setImage('https://klipy.com/gifs/prison-realm-jujutsu-kaisen-1');
 
             await interaction.reply({ embeds: [embed], ephemeral: false });

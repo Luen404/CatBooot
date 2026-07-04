@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,31 +21,37 @@ module.exports = {
     async execute(interaction) {
         const target = interaction.options.getMember('대상');
         const durationInSeconds = interaction.options.getInteger('시간');
-        const reason = interaction.options.getString('사유') || '';
+        const reason = interaction.options.getString('사유');
 
         if (!target) {
-            return interaction.reply({ content: '서버에 있는 유저만 타임아웃할 수 있습니다.', ephemeral: true });
+            return interaction.reply({ content: '서버에 있는 유저만 타임아웃할 수 있습니다.', flags: MessageFlags.Ephemeral });
         }
 
         if (!target.manageable) {
-            return interaction.reply({ content: '이 유저를 타임아웃할 권한이 없습니다.', ephemeral: true });
+            return interaction.reply({ content: '이 유저를 타임아웃할 권한이 없습니다.', flags: MessageFlags.Ephemeral });
         }
 
         try {
             const durationInMs = durationInSeconds * 1000;
+            const auditLogReason = reason ? `${interaction.user.tag}: ${reason}` : `${interaction.user.tag}: 사유 없음`;
 
-            await target.timeout(durationInMs, `${interaction.user.tag}: ${reason}`);
+            await target.timeout(durationInMs, auditLogReason);
 
             const embed = new EmbedBuilder()
                 .setTitle('옥문강')
-                .setDescription(`${target.user.tag}님이 옥문강에 갇혔습니다. ${durationInSeconds}초 뒤 해방`)
-                .addFields({ name: '', value: reason })
-                .setImage('https://klipy.com/gifs/prison-realm-jujutsu-kaisen-1');
+                .setDescription(`${target.user.tag}님이 **옥문강**에 갇혔습니다. ${durationInSeconds}초 뒤 해방`)
+                .setImage('https://i.imgur.com/Yi9gZQO.gif');
 
-            await interaction.reply({ embeds: [embed], ephemeral: false });
+            if (reason) {
+                embed.addFields([
+                    { name: '사유 | ', value: reason }
+                ]);
+            }
+
+            await interaction.reply({ embeds: [embed] });
         } catch (error) {
             console.error(error);
-            await interaction.reply({ content: '타임아웃 처리 중 오류가 발생했습니다.', ephemeral: true });
+            await interaction.reply({ content: '타임아웃 처리 중 오류가 발생했습니다.', flags: MessageFlags.Ephemeral });
         }
     },
 };

@@ -1,32 +1,44 @@
-const { Events } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 
-const IF_BOT_ID = '693818502657867878';
+const usersPath = path.join(__dirname, '../data/users.json');
+const configPath = path.join(__dirname, '../data/PointConfig.json');
+
+function readJson(filePath, defaultData = {}) {
+    if (!fs.existsSync(filePath)) {
+        return defaultData;
+    }
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+}
+
+function saveJson(filePath, data) {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 4), 'utf-8');
+}
 
 module.exports = {
-    name: Events.MessageCreate,
-
+    name: 'messageCreate',
     async execute(message) {
-        console.log('메시지 감지:', message.author.tag, message.author.id);
+        if (message.author.bot || !message.guild) return;
 
-        if (message.author.id !== IF_BOT_ID) return;
+        const config = readJson(configPath, { messagePoint: 1, voicePoint: 5 });
+        if (config.messagePoint <= 0) return;
 
-        console.log('==============================');
-        console.log('이프 봇 메시지 감지!');
-        console.log('Message ID:', message.id);
-        console.log('Author:', message.author.tag);
-        console.log('Author ID:', message.author.id);
-        console.log('Embeds:', message.embeds.length);
-        console.log('Content:', message.content);
-        console.log('==============================');
+        const users = readJson(usersPath, {});
+        const userId = message.author.id;
 
-        if (message.embeds.length > 0) {
-            console.log(
-                JSON.stringify(
-                    message.embeds.map(embed => embed.toJSON()),
-                    null,
-                    4
-                )
-            );
+        if (!users[userId]) {
+            users[userId] = {
+                tag: message.author.tag,
+                Ticket: 0,
+                Point: 0
+            };
         }
+
+        if (users[userId].Point === undefined) {
+            users[userId].Point = 0;
+        }
+
+        users[userId].Point += config.messagePoint;
+        saveJson(usersPath, users);
     }
 };

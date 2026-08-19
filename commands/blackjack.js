@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { loadData, saveData, createDeck, calculateScore, activeGames, TURN_TIME, JOIN_TIME } = require('../utils/blackjacklogic');
 const { drawTableImage } = require('../utils/blackjackImage');
+const DailyMissionManager = require('../utils/DailyMissionManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,6 +16,7 @@ module.exports = {
     async execute(interaction) {
         const channelId = interaction.channelId;
         const hostId = interaction.user.id;
+        const client = interaction.client;
 
         if (activeGames.has(channelId)) {
             return interaction.reply({ content: '이미 게임이 진행 중입니다.', ephemeral: true });
@@ -99,21 +101,17 @@ module.exports = {
 
             for (const p of players) {
                 p.hand.push(deck.pop(), deck.pop());
-            }
-            const DailyMissionManager = require('../utils/DailyMissionManager');
-            const result = DailyMissionManager.addProgress(
-                playerId,
-                'blackjack',
-                1
-            );
 
-            if (result.completed && !result.alreadyCompleted) {
-                await DailyMissionManager.completeMission(
-                    playerId,
-                    'blackjack',
-                    client
-                );
+                try {
+                    const result = DailyMissionManager.addProgress(p.id, 'blackjack', 1);
+                    if (result && result.completed && !result.alreadyCompleted) {
+                        await DailyMissionManager.completeMission(p.id, 'blackjack', client);
+                    }
+                } catch (e) {
+                    console.error(`미션 처리 중 오류 발생 (${p.id}):`, e);
+                }
             }
+
             let currentPlayerIndex = 0;
             let gameMessage = null;
 

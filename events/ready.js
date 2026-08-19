@@ -69,7 +69,8 @@ module.exports = {
             'users.json': {},
             'Shop.json': { "items": [] },
             'Stocks.json': { "stocks": [] },
-            'UserStocks.json': {}
+            'UserStocks.json': {},
+            'Attendance.json': {}
         };
 
         for (const [file, data] of Object.entries(defaultData)) {

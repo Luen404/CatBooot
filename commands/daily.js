@@ -2,8 +2,23 @@ const {
     SlashCommandBuilder,
     EmbedBuilder
 } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 
 const DailyMissionManager = require('../utils/DailyMissionManager');
+const usersPath = path.join(process.cwd(), 'data', 'users.json');
+
+function readJson(filePath, defaultData = {}) {
+    if (!fs.existsSync(filePath)) {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
+        fs.writeFileSync(filePath, JSON.stringify(defaultData, null, 4));
+    }
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+}
+
+function saveJson(filePath, data) {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 4), 'utf-8');
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -67,13 +82,37 @@ module.exports = {
             id => data.missions.some(mission => mission.id === id)
         ).length;
 
+        const isAllCompleted = data.missions.length > 0 && completedCount === data.missions.length;
+        let rewardGivenText = '';
+
+        if (isAllCompleted) {
+            let users = readJson(usersPath, {});
+
+            if (!users[userId]) {
+                users[userId] = { Point: 0, Ticket: 0, Coin: 0 };
+            }
+
+            if (!data.user.allMissionsRewarded) {
+                users[userId].Coin = (users[userId].Coin || 0) + 1;
+                data.user.allMissionsRewarded = true;
+
+                saveJson(usersPath, users);
+                DailyMissionManager.saveData();
+
+                rewardGivenText = '\n🎁 **모든 미션 완료! 코인 1개가 지급되었습니다!**';
+            } else {
+                rewardGivenText = '\n🎉 **모든 미션 완료 보상 수령 완료 (코인 +1)**';
+            }
+        }
+
         const embed = new EmbedBuilder()
             .setTitle('🐱 오늘의 일일 미션')
             .setDescription(lines.join('\n'))
             .addFields({
                 name: '미션 진행',
-                value: `**${completedCount} / ${data.missions.length}** 완료`
+                value: `**${completedCount} / ${data.missions.length}** 완료${rewardGivenText}`
             })
+            .setColor(isAllCompleted ? 0x57F287 : 0x5865F2);
 
         await interaction.reply({
             embeds: [embed]

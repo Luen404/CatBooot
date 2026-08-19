@@ -1,25 +1,24 @@
-const VoiceManager = require('../utils/VoiceManager');
+const { Events } = require('discord.js');
+const VoiceMissionUtil = require('../utils/VoiceMissionUtil');
+const VoiceRewardUtil = require('../utils/VoiceRewardUtil');
 
 module.exports = {
-    name: 'voiceStateUpdate',
-
+    name: Events.VoiceStateUpdate,
     async execute(oldState, newState) {
-        if (newState.member?.user?.bot) return;
-
         const userId = newState.member.id;
-        const userTag = newState.member.user.tag;
+        
+        if (newState.member.user.bot) return;
 
         const oldChannel = oldState.channelId;
         const newChannel = newState.channelId;
 
-        if (oldChannel === newChannel) return;
-
-        if (oldChannel && (!newChannel || oldChannel !== newChannel)) {
-            await VoiceManager.endSession(userId, newState.client);
+        if (!oldChannel && newChannel) {
+            VoiceMissionUtil.handleJoin(userId);
+            VoiceRewardUtil.handleJoin(userId);
         }
-
-        if (newChannel) {
-            VoiceManager.startSession(userId, userTag);
+        else if (oldChannel && !newChannel) {
+            VoiceMissionUtil.handleLeave(userId);
+            VoiceRewardUtil.handleLeave(userId);
         }
     }
 };

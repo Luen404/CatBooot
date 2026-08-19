@@ -89,11 +89,11 @@ module.exports = {
             let users = readJson(usersPath, {});
 
             if (!users[userId]) {
-                users[userId] = { Point: 0, Ticket: 0, Coin: 0 };
+                users[userId] = { Point: 0, Ticket: 0, coin: 0 };
             }
 
             if (!data.user.allMissionsRewarded) {
-                users[userId].Coin = (users[userId].Coin || 0) + 1;
+                users[userId].Coin = (users[userId].coin || 0) + 1;
                 data.user.allMissionsRewarded = true;
 
                 saveJson(usersPath, users);

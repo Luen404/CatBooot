@@ -14,7 +14,7 @@ class DailyMissionManager {
     constructor() {
         this.defaultMissions = [
             { id: 'chat', name: '채팅 보내기', description: '채팅 50회 작성하기', target: 50 },
-            { id: 'voice', name: '음성 채널 참여', description: '음성 채널 15분 이용하기', target: 15 },
+//            { id: 'voice', name: '음성 채널 참여', description: '음성 채널 15분 이용하기', target: 15 },
             { id: 'blackjack', name: '블랙잭 플레이', description: '블랙잭 게임 3회 참여하기', target: 3 },
         ];
 

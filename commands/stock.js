@@ -86,6 +86,8 @@ module.exports = {
         }
 
         let selectedStockId = null;
+        let isBuyMode = true;
+        let tradeQuantity = 1;
 
         function createMainUI() {
             stocksData = updateStockPrices();
@@ -160,6 +162,47 @@ module.exports = {
             return { embeds: [embed], components: [row] };
         }
 
+        function createQuantityUI() {
+            const stock = stocksData.stocks.find(s => s.id === selectedStockId);
+            const myPoint = users[userID]?.Point || 0;
+            const myOwned = userStocks[userID]?.[stock.id] || 0;
+            const maxLimit = isBuyMode ? Math.floor(myPoint / stock.price) : myOwned;
+
+            const totalPrice = stock.price * tradeQuantity;
+
+            const embed = {
+                title: `${stock.name} ${isBuyMode ? '매수' : '매도'} 수량 설정`,
+                description: `아래 버튼을 조작하여 수량을 설정한 후 **[확인]**을 누르세요.\n\n` +
+                             `• 현재가: **${stock.price.toLocaleString()}P**\n` +
+                             `• 설정 수량: **${tradeQuantity.toLocaleString()}주**\n` +
+                             `• 총 예정 금액: **${totalPrice.toLocaleString()}P**\n\n` +
+                             `• 보유 포인트: **${myPoint.toLocaleString()}P** (최대 ${Math.floor(myPoint / stock.price).toLocaleString()}주 매수 가능)\n` +
+                             `• 보유 주식: **${myOwned.toLocaleString()}주**`,
+                color: isBuyMode ? 0x57F287 : 0xED4245
+            };
+
+            const row1 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('qty_-100').setLabel('-100').setStyle(ButtonStyle.Secondary).setDisabled(tradeQuantity <= 100),
+                new ButtonBuilder().setCustomId('qty_-10').setLabel('-10').setStyle(ButtonStyle.Secondary).setDisabled(tradeQuantity <= 10),
+                new ButtonBuilder().setCustomId('qty_-1').setLabel('-1').setStyle(ButtonStyle.Secondary).setDisabled(tradeQuantity <= 1),
+                new ButtonBuilder().setCustomId('qty_+1').setLabel('+1').setStyle(ButtonStyle.Secondary).setDisabled(maxLimit > 0 && tradeQuantity >= maxLimit),
+                new ButtonBuilder().setCustomId('qty_+10').setLabel('+10').setStyle(ButtonStyle.Secondary).setDisabled(maxLimit > 0 && tradeQuantity + 10 > maxLimit)
+            );
+
+            const row2 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('qty_+100').setLabel('+100').setStyle(ButtonStyle.Secondary).setDisabled(maxLimit > 0 && tradeQuantity + 100 > maxLimit),
+                new ButtonBuilder().setCustomId('qty_min').setLabel('최소').setStyle(ButtonStyle.Primary).setDisabled(tradeQuantity <= 1),
+                new ButtonBuilder().setCustomId('qty_max').setLabel('최대').setStyle(ButtonStyle.Primary).setDisabled(maxLimit <= 0 || tradeQuantity >= maxLimit)
+            );
+
+            const row3 = new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('confirm_trade').setLabel(isBuyMode ? '구매 확정' : '판매 확정').setStyle(ButtonStyle.Success).setDisabled(maxLimit <= 0 || tradeQuantity <= 0),
+                new ButtonBuilder().setCustomId('cancel_trade').setLabel('취소').setStyle(ButtonStyle.Danger)
+            );
+
+            return { embeds: [embed], components: [row1, row2, row3] };
+        }
+
         const response = await interaction.reply({ ...createMainUI(), fetchReply: true });
         const collector = response.createMessageComponentCollector({ time: 600000 });
 
@@ -181,122 +224,81 @@ module.exports = {
                 await i.update(createMainUI());
             }
             else if (i.customId === 'btn_stock_buy' || i.customId === 'btn_stock_sell') {
-                const isBuy = i.customId === 'btn_stock_buy';
+                isBuyMode = i.customId === 'btn_stock_buy';
+                tradeQuantity = 1;
+                await i.update(createQuantityUI());
+            }
+            else if (i.customId.startsWith('qty_')) {
                 const stock = stocksData.stocks.find(s => s.id === selectedStockId);
+                const myPoint = users[userID]?.Point || 0;
+                const myOwned = userStocks[userID]?.[stock.id] || 0;
+                const maxLimit = isBuyMode ? Math.floor(myPoint / stock.price) : myOwned;
 
+                const action = i.customId.replace('qty_', '');
+
+                if (action === 'min') tradeQuantity = 1;
+                else if (action === 'max') tradeQuantity = Math.max(1, maxLimit);
+                else {
+                    const diff = parseInt(action, 10);
+                    tradeQuantity = Math.max(1, tradeQuantity + diff);
+                    if (maxLimit > 0) tradeQuantity = Math.min(tradeQuantity, maxLimit);
+                }
+
+                await i.update(createQuantityUI());
+            }
+            else if (i.customId === 'cancel_trade') {
+                await i.update(createTradeUI(selectedStockId));
+            }
+            else if (i.customId === 'confirm_trade') {
+                const stock = stocksData.stocks.find(s => s.id === selectedStockId);
                 if (!stock) return i.update(createMainUI());
 
                 const myPoint = users[userID]?.Point || 0;
                 const myOwned = userStocks[userID]?.[stock.id] || 0;
-                const maxBuyable = Math.floor(myPoint / stock.price);
+                const totalPrice = stock.price * tradeQuantity;
 
-                const btnMin = new ButtonBuilder().setCustomId('btn_amount_min').setLabel('최소 (1주)').setStyle(ButtonStyle.Primary);
-                const btnMax = new ButtonBuilder().setCustomId('btn_amount_max').setLabel(`최대 (${isBuy ? maxBuyable : myOwned}주)`).setStyle(ButtonStyle.Primary);
-                const btnCancel = new ButtonBuilder().setCustomId('btn_amount_cancel').setLabel('취소').setStyle(ButtonStyle.Secondary);
-
-                const actionRow = new ActionRowBuilder().addComponents(btnMin, btnMax, btnCancel);
-
-                await i.update({
-                    embeds: [{
-                        title: `${stock.name} ${isBuy ? '매수' : '매도'} 수량 선택`,
-                        description: `아래 **[최소/최대]** 버튼을 클릭하거나, 채팅창에 수량을 직접 숫자로 입력해주세요.\n\n` +
-                                     `• 현재가: **${stock.price.toLocaleString()}P**\n` +
-                                     `• 보유 포인트: **${myPoint.toLocaleString()}P** (최대 ${maxBuyable}주 매수 가능)\n` +
-                                     `• 보유 주식: **${myOwned}주**`,
-                        color: isBuy ? 0x57F287 : 0xED4245
-                    }],
-                    components: [actionRow]
-                });
-
-                const processTrade = async (amount, targetInteraction) => {
-                    const totalPrice = stock.price * amount;
-
-                    if (isBuy) {
-                        if (amount <= 0 || myPoint < totalPrice) {
-                            const errEmbed = { title: "매수 실패", description: `포인트가 부족하거나 수량이 유효하지 않습니다.\n필요 포인트: ${totalPrice.toLocaleString()}P / 보유: ${myPoint.toLocaleString()}P`, color: 0xED4245 };
-                            if (targetInteraction.replied || targetInteraction.deferred) await targetInteraction.followUp({ embeds: [errEmbed], ephemeral: true });
-                            else await targetInteraction.update({ embeds: [errEmbed], components: [] });
-
-                            setTimeout(async () => { await interaction.editReply(createTradeUI(selectedStockId)).catch(() => {}); }, 2500);
-                            return;
-                        }
-
-                        users[userID].Point -= totalPrice;
-                        if (!userStocks[userID]) userStocks[userID] = {};
-                        userStocks[userID][stock.id] = (userStocks[userID][stock.id] || 0) + amount;
-
-                        saveJson(usersPath, users);
-                        saveJson(userStocksPath, userStocks);
-
-                        const successEmbed = { title: "매수 완료", description: `${stock.name} ${amount}주를 ${totalPrice.toLocaleString()}P에 매수하였습니다.`, color: 0x57F287 };
-                        if (targetInteraction.isButton && targetInteraction.isButton()) await targetInteraction.update({ embeds: [successEmbed], components: [] });
-                        else await interaction.editReply({ embeds: [successEmbed], components: [] });
-
-                    } else {
-                        if (amount <= 0 || myOwned < amount) {
-                            const errEmbed = { title: "매도 실패", description: `보유 주식이 부족합니다.\n요청 수량: ${amount}주 / 보유: ${myOwned}주`, color: 0xED4245 };
-                            if (targetInteraction.replied || targetInteraction.deferred) await targetInteraction.followUp({ embeds: [errEmbed], ephemeral: true });
-                            else await targetInteraction.update({ embeds: [errEmbed], components: [] });
-
-                            setTimeout(async () => { await interaction.editReply(createTradeUI(selectedStockId)).catch(() => {}); }, 2500);
-                            return;
-                        }
-
-                        users[userID].Point = (users[userID].Point || 0) + totalPrice;
-                        userStocks[userID][stock.id] -= amount;
-
-                        saveJson(usersPath, users);
-                        saveJson(userStocksPath, userStocks);
-
-                        const successEmbed = { title: "매도 완료", description: `${stock.name} ${amount}주를 ${totalPrice.toLocaleString()}P에 매도하였습니다.`, color: 0x57F287 };
-                        if (targetInteraction.isButton && targetInteraction.isButton()) await targetInteraction.update({ embeds: [successEmbed], components: [] });
-                        else await interaction.editReply({ embeds: [successEmbed], components: [] });
-                    }
-
-                    setTimeout(async () => {
-                        await interaction.editReply(createTradeUI(selectedStockId)).catch(() => {});
-                    }, 2500);
-                };
-
-                const subCollector = response.createMessageComponentCollector({
-                    filter: btnI => btnI.user.id === interaction.user.id,
-                    time: 30000,
-                    max: 1
-                });
-
-                const msgFilter = m => m.author.id === interaction.user.id;
-                const msgCollector = interaction.channel.createMessageCollector({ filter: msgFilter, max: 1, time: 30000 });
-
-                subCollector.on('collect', async btnI => {
-                    msgCollector.stop('button_clicked');
-                    if (btnI.customId === 'btn_amount_cancel') {
-                        await btnI.update(createTradeUI(selectedStockId));
-                    } else if (btnI.customId === 'btn_amount_min') {
-                        await processTrade(1, btnI);
-                    } else if (btnI.customId === 'btn_amount_max') {
-                        const targetAmount = isBuy ? maxBuyable : myOwned;
-                        await processTrade(targetAmount, btnI);
-                    }
-                });
-
-                msgCollector.on('collect', async m => {
-                    subCollector.stop('message_received');
-                    try { await m.delete(); } catch(e) {}
-
-                    const amount = parseInt(m.content.trim(), 10);
-                    if (isNaN(amount) || amount <= 0) {
-                        await interaction.editReply({
-                            embeds: [{ title: "거래 실패", description: "수량은 1 이상의 정수만 입력할 수 있습니다.", color: 0xED4245 }],
+                if (isBuyMode) {
+                    if (tradeQuantity <= 0 || myPoint < totalPrice) {
+                        await i.update({
+                            embeds: [{ title: "매수 실패", description: `포인트가 부족하거나 수량이 유효하지 않습니다.`, color: 0xED4245 }],
                             components: []
                         });
-                        setTimeout(async () => {
-                            await interaction.editReply(createTradeUI(selectedStockId)).catch(() => {});
-                        }, 2500);
-                        return;
-                    }
+                    } else {
+                        users[userID].Point -= totalPrice;
+                        if (!userStocks[userID]) userStocks[userID] = {};
+                        userStocks[userID][stock.id] = (userStocks[userID][stock.id] || 0) + tradeQuantity;
 
-                    await processTrade(amount, interaction);
-                });
+                        saveJson(usersPath, users);
+                        saveJson(userStocksPath, userStocks);
+
+                        await i.update({
+                            embeds: [{ title: "매수 완료", description: `${stock.name} **${tradeQuantity}주**를 **${totalPrice.toLocaleString()}P**에 매수하였습니다.`, color: 0x57F287 }],
+                            components: []
+                        });
+                    }
+                } else {
+                    if (tradeQuantity <= 0 || myOwned < tradeQuantity) {
+                        await i.update({
+                            embeds: [{ title: "매도 실패", description: `보유 주식이 부족합니다.`, color: 0xED4245 }],
+                            components: []
+                        });
+                    } else {
+                        users[userID].Point = (users[userID].Point || 0) + totalPrice;
+                        userStocks[userID][stock.id] -= tradeQuantity;
+
+                        saveJson(usersPath, users);
+                        saveJson(userStocksPath, userStocks);
+
+                        await i.update({
+                            embeds: [{ title: "매도 완료", description: `${stock.name} **${tradeQuantity}주**를 **${totalPrice.toLocaleString()}P**에 매도하였습니다.`, color: 0x57F287 }],
+                            components: []
+                        });
+                    }
+                }
+
+                setTimeout(async () => {
+                    await interaction.editReply(createTradeUI(selectedStockId)).catch(() => {});
+                }, 2000);
             }
         });
 

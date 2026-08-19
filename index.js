@@ -15,3 +15,4 @@ require('./Handler/eventHandler')(client);
 require('./Handler/commandHandler')(client);
 
 client.login(process.env.DSC_T);
+

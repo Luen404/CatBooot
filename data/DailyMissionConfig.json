@@ -1,0 +1,11 @@
+{
+    "mainChannelId": "1473313347104407674",
+    "successChannelId": "1512486687803048076",
+    "blackjackTarget": 5,
+    "rewards": {
+        "chat": 1,
+        "voice": 1,
+        "blackjack": 3,
+        "sentence": 1
+    }
+}

@@ -100,7 +100,20 @@ module.exports = {
             for (const p of players) {
                 p.hand.push(deck.pop(), deck.pop());
             }
+            const DailyMissionManager = require('../utils/DailyMissionManager');
+            const result = DailyMissionManager.addProgress(
+                playerId,
+                'blackjack',
+                1
+            );
 
+            if (result.completed && !result.alreadyCompleted) {
+                await DailyMissionManager.completeMission(
+                    playerId,
+                    'blackjack',
+                    client
+                );
+            }
             let currentPlayerIndex = 0;
             let gameMessage = null;
 

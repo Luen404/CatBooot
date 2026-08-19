@@ -31,6 +31,7 @@ module.exports = {
 
         const currentTicket = userData[userID] ? (userData[userID].Ticket || 0) : 0;
         const currentPoint = userData[userID] ? (userData[userID].Point || 0) : 0;
+        const currentCoin = userData[userID] ? (userData[userID].coin || 0) : 0;
 
         let inventoryData = {};
         if (fs.existsSync(inventoryPath)) {
@@ -59,7 +60,7 @@ module.exports = {
             title: `${targetUser.displayName}님의 보관함 조회 결과`,
             color: 0x5865F2,
             fields: [
-                { name: "보유 재화", value: `뽑기권: ${currentTicket}장\n보유 포인트: ${currentPoint}P`, inline: false },
+                { name: "보유 재화", value: `뽑기권: ${currentTicket}장\n보유 포인트: ${currentPoint}P\n냥냥코인: ${coin}`, inline: false },
                 { name: "보유 아이템 목록", value: itemDisplay, inline: false }
             ],
         };

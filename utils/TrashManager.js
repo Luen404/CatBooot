@@ -40,8 +40,7 @@ function getUser(userId) {
     if (!users[userId]) {
         users[userId] = {
             Point: 0,
-            NyangCoin: 0,
-            TrashInventory: {}
+            coin: 0,
         };
     }
 
@@ -112,14 +111,18 @@ function searchTrash(userId) {
     if (!data.user.TrashInventory[item.id]) {
         data.user.TrashInventory[item.id] = 0;
     }
-
     data.user.TrashInventory[item.id] += 1;
+
+    const gainedPoint = item.value || 0;
+    data.user.Point += gainedPoint;
 
     writeJson(usersPath, data.users);
 
     return {
         success: true,
         item,
+        gainedPoint,
+        totalPoint: data.user.Point,
         remainingCoin: data.user.NyangCoin
     };
 }
@@ -148,7 +151,8 @@ function getInventory(userId) {
             (sum, item) => sum + item.value * item.amount,
             0
         ),
-        nyangCoin: data.user.NyangCoin
+        nyangCoin: data.user.NyangCoin,
+        point: data.user.Point
     };
 }
 

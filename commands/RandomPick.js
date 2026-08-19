@@ -46,6 +46,10 @@ module.exports = {
              return interaction.reply({ content: `뽑기권이 부족합니다.\n필요: ${count}장\n보유: ${currentTicket}장`, ephemeral: true }); 
         }
 
+        if (typeof users[userID].Point !== 'number') {
+            users[userID].Point = 0;
+        }
+
         const inventory = readJson(inventoryPath, {}); 
         if (!inventory[userID]) inventory[userID] = []; 
         
@@ -71,11 +75,22 @@ module.exports = {
             
             users[userID].Ticket--; 
             
+            const pointMatch = pickedItem.name.match(/([0-9,]+)\s*냥\s*포인트/);
+            let isPoint = false;
+
+            if (pointMatch) {
+                isPoint = true;
+                const gainedPoints = parseInt(pointMatch[1].replace(/,/g, ''), 10);
+                if (!isNaN(gainedPoints)) {
+                    users[userID].Point += gainedPoints;
+                }
+            }
+
             const isKkwang = pickedItem.name.includes("꽝") || 
             (pickedItem.id && String(pickedItem.id).includes("꽝")) || 
             (pickedItem.id && String(pickedItem.id).toLowerCase().includes("kkwang")); 
             
-            if (!isKkwang) { 
+            if (!isKkwang && !isPoint) { 
                 inventory[userID].push({ 
                     itemId: pickedItem.id || `gacha_${Date.now()}_${i}`, 
                     name: pickedItem.name, 
@@ -83,7 +98,7 @@ module.exports = {
                 }); 
             } 
             
-            const resultKey = pickedItem.id;
+            const resultKey = pickedItem.id || pickedItem.name;
             if (!rolledCounts[resultKey]) {
                 rolledCounts[resultKey] = {
                     name: pickedItem.name,
@@ -107,7 +122,7 @@ module.exports = {
             title: "가챠 결과", 
             description: `${userDisplayName}님의 뽑기 결과 (총 ${count}회 진행)\n\n` + resultList.join("\n"), 
             color: 0x5865F2, 
-            footer: { text: `남은 뽑기권 : ${users[userID].Ticket}장` } 
+            footer: { text: `남은 뽑기권 : ${users[userID].Ticket}장 | 보유 포인트 : ${users[userID].Point}P` } 
         }; 
             
         await interaction.reply({ embeds: [embed] });

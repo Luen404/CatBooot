@@ -39,7 +39,6 @@ module.exports = {
                 `판매 가격: **${item.value}P**\n\n` +
                 `🪙 남은 냥냥코인: **${result.remainingCoin}**`
             )
-            .setTimestamp();
 
         await interaction.reply({
             embeds: [embed]

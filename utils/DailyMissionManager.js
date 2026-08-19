@@ -116,9 +116,22 @@ class DailyMissionManager {
         };
     }
 
+
     async completeMission(userId, missionId, client) {
-        this.saveData();
+    const mission = this.defaultMissions.find(m => m.id === missionId);
+    if (!mission || !client) return;
+
+    const NOTIFICATION_CHANNEL_ID = '1512486687803048076';
+
+    try {
+        const channel = await client.channels.fetch(NOTIFICATION_CHANNEL_ID);
+        if (channel) {
+            await channel.send(`<@${userId}> 🎉 **[일일 미션 완료]** **${mission.name}** 미션을 완료하셨습니다!`);
+        }
+    } catch (e) {
+        console.error('미션 완료 알림 전송 실패:', e);
     }
+}
 }
 
 module.exports = new DailyMissionManager();

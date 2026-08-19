@@ -5,8 +5,6 @@ const path = require('path');
 const usersPath = path.join(process.cwd(), 'data', 'users.json');
 const attendancePath = path.join(process.cwd(), 'data', 'Attendance.json');
 
-const SERVER_TAG = '냐¿옹';
-
 function readJson(filePath, defaultData = {}) {
     if (!fs.existsSync(filePath)) {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -32,6 +30,7 @@ module.exports = {
 
     async execute(interaction) {
         const userID = interaction.user.id;
+        const guildID = interaction.guildId;
         const todayStr = getTodayDateString();
 
         let users = readJson(usersPath, {});
@@ -59,12 +58,13 @@ module.exports = {
             });
         }
 
-        const member = interaction.member;
-        const nickname = member.nickname || '';
-        const username = interaction.user.username;
-        const globalName = interaction.user.globalName || '';
+        const fetchedUser = await interaction.client.users.fetch(userID, { force: true });
+        const primaryGuild = fetchedUser.primaryGuild;
 
-        const hasTag = nickname.includes(SERVER_TAG) || username.includes(SERVER_TAG) || globalName.includes(SERVER_TAG);
+        let hasTag = false;
+        if (primaryGuild && primaryGuild.identityGuildId === guildID && primaryGuild.identityEnabled) {
+            hasTag = true;
+        }
 
         const basePoint = 2000;
         const bonusPoint = hasTag ? 1000 : 0;
@@ -84,9 +84,9 @@ module.exports = {
                    `• 기본 지급: **${basePoint.toLocaleString()}P**\n`;
 
         if (hasTag) {
-            desc += `• 서버 태그 혜택: **+${bonusPoint.toLocaleString()}P**\n서버 태그 달아줘서 고마워요 😘\n`;
+            desc += `• 서버 태그 혜택(+50%): **+${bonusPoint.toLocaleString()}P**\n`;
         } else {
-            desc += `• 서버 태그 혜택: **없음** (닉네임에 [${SERVER_TAG}] 포함 시 +1,000P 추가)\n`;
+            desc += `• 서버 태그 혜택: **없음**\n`;
         }
 
         desc += `\n총 획득 포인트: **+${totalPoint.toLocaleString()}P**\n` +

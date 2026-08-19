@@ -29,7 +29,7 @@ module.exports = {
                 tag: userTAG,
                 Ticket: 0,
                 Point: 0,
-                Coin: 0
+                coin: 0
             };
 
             try {
@@ -42,7 +42,7 @@ module.exports = {
 
         const currentTicket = userData[userID].Ticket || 0;
         const currentPoint = userData[userID].Point || 0;
-        const currentCoin = userData[userID].Coin || 0;
+        const currentcoin = userData[userID].coin || 0;
 
         let inventoryData = {};
         if (fs.existsSync(inventoryPath)) {
@@ -73,7 +73,7 @@ module.exports = {
             fields: [
                 { 
                     name: "보유 재화", 
-                    value: `뽑기권: ${currentTicket.toLocaleString()}장\n보유 포인트: ${currentPoint.toLocaleString()}P\n보유 코인: ${currentCoin.toLocaleString()}개`, 
+                    value: `뽑기권: ${currentTicket.toLocaleString()}장\n보유 포인트: ${currentPoint.toLocaleString()}P\n보유 코인: ${currentcoin.toLocaleString()}개`, 
                     inline: false 
                 },
                 { name: "보유 아이템 목록", value: itemDisplay, inline: false }

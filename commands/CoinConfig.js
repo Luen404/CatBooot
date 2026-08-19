@@ -102,7 +102,7 @@ module.exports = {
                     targetUser.displayName,
                 Ticket: 0,
                 Point: 0,
-                NyangCoin: 0
+                coin: 0
             };
         }
 

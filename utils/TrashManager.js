@@ -48,8 +48,8 @@ function getUser(userId) {
         users[userId].Point = 0;
     }
 
-    if (typeof users[userId].NyangCoin !== 'number') {
-        users[userId].NyangCoin = 0;
+    if (typeof users[userId].coin !== 'number') {
+        users[userId].coin = 0;
     }
 
     if (!users[userId].TrashInventory) {
@@ -90,7 +90,7 @@ function drawItem() {
 function searchTrash(userId) {
     const data = getUser(userId);
 
-    if (data.user.NyangCoin <= 0) {
+    if (data.user.coin <= 0) {
         return {
             success: false,
             reason: 'NO_COIN'
@@ -106,7 +106,7 @@ function searchTrash(userId) {
         };
     }
 
-    data.user.NyangCoin -= 1;
+    data.user.coin -= 1;
 
     if (!data.user.TrashInventory[item.id]) {
         data.user.TrashInventory[item.id] = 0;
@@ -123,7 +123,7 @@ function searchTrash(userId) {
         item,
         gainedPoint,
         totalPoint: data.user.Point,
-        remainingCoin: data.user.NyangCoin
+        remainingCoin: data.user.coin
     };
 }
 
@@ -151,7 +151,7 @@ function getInventory(userId) {
             (sum, item) => sum + item.value * item.amount,
             0
         ),
-        nyangCoin: data.user.NyangCoin,
+        coin: data.user.coin,
         point: data.user.Point
     };
 }

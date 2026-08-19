@@ -1,30 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-const DailyMissionManager = require('../utils/DailyMissionManager');
-
-const usersPath = path.join(__dirname, '../data/users.json');
-const configPath = path.join(__dirname, '../data/PointConfig.json');
-
-function readJson(filePath, defaultData = {}) {
-    try {
-        if (!fs.existsSync(filePath)) return defaultData;
-        return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    } catch (err) {
-        console.error(`JSON 읽기 오류 (${filePath}):`, err);
-        return defaultData;
-    }
-}
-
-function saveJson(filePath, data) {
-    try {
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 4), 'utf-8');
-    } catch (err) {
-        console.error(`JSON 저장 오류 (${filePath}):`, err);
-    }
-}
-
-const voiceTimers = new Map();
-const voiceSessions = new Map();
+const VoiceManager = require('../utils/VoiceManager');
 
 module.exports = {
     name: 'voiceStateUpdate',
@@ -41,53 +15,11 @@ module.exports = {
         if (oldChannel === newChannel) return;
 
         if (oldChannel && (!newChannel || oldChannel !== newChannel)) {
-            if (voiceTimers.has(userId)) {
-                clearInterval(voiceTimers.get(userId));
-                voiceTimers.delete(userId);
-            }
-
-            const startTime = voiceSessions.get(userId);
-            if (startTime) {
-                voiceSessions.delete(userId);
-
-                const elapsed = Date.now() - startTime;
-                const minutes = Math.floor(elapsed / 60000);
-
-                if (minutes > 0) {
-                    const result = DailyMissionManager.addVoiceTime(userId, minutes);
-                    if (result.completed && !result.alreadyCompleted) {
-                        await DailyMissionManager.completeMission(userId, 'voice', newState.client);
-                    }
-                }
-            }
+            await VoiceManager.endSession(userId, newState.client);
         }
 
         if (newChannel) {
-            voiceSessions.set(userId, Date.now());
-
-            const intervalId = setInterval(() => {
-                const config = readJson(configPath, { messagePoint: 1, voicePoint: 5 });
-                if (config.voicePoint <= 0) return;
-
-                const users = readJson(usersPath, {});
-
-                if (!users[userId]) {
-                    users[userId] = {
-                        tag: userTag,
-                        Ticket: 0,
-                        Point: 0
-                    };
-                }
-
-                if (users[userId].Point === undefined) {
-                    users[userId].Point = 0;
-                }
-
-                users[userId].Point += config.voicePoint;
-                saveJson(usersPath, users);
-            }, 60000);
-
-            voiceTimers.set(userId, intervalId);
+            VoiceManager.startSession(userId, userTag);
         }
     }
 };

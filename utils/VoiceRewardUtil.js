@@ -17,7 +17,6 @@ module.exports = {
         rewardJoinTimes.delete(userId);
 
         if (durationMinutes > 0) {
-            // 예: 1분당 10포인트 지급
             const earnedPoints = durationMinutes * 10;
             
             try {

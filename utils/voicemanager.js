@@ -14,7 +14,6 @@ function readJson(filePath, defaultData = {}) {
         return defaultData;
     }
 }
-
 function saveJson(filePath, data) {
     try {
         fs.writeFileSync(filePath, JSON.stringify(data, null, 4), 'utf-8');

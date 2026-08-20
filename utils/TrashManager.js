@@ -40,7 +40,7 @@ function getUser(userId) {
     if (!users[userId]) {
         users[userId] = {
             Point: 0,
-            coin: 0,
+            coin: 0
         };
     }
 
@@ -50,10 +50,6 @@ function getUser(userId) {
 
     if (typeof users[userId].coin !== 'number') {
         users[userId].coin = 0;
-    }
-
-    if (!users[userId].TrashInventory) {
-        users[userId].TrashInventory = {};
     }
 
     return {
@@ -108,11 +104,6 @@ function searchTrash(userId) {
 
     data.user.coin -= 1;
 
-    if (!data.user.TrashInventory[item.id]) {
-        data.user.TrashInventory[item.id] = 0;
-    }
-    data.user.TrashInventory[item.id] += 1;
-
     const gainedPoint = item.value || 0;
     data.user.Point += gainedPoint;
 
@@ -127,82 +118,6 @@ function searchTrash(userId) {
     };
 }
 
-function getInventory(userId) {
-    const data = getUser(userId);
-    const items = readJson(itemsPath, []);
-
-    const inventory = [];
-
-    for (const item of items) {
-        const amount =
-            data.user.TrashInventory[item.id] || 0;
-
-        if (amount > 0) {
-            inventory.push({
-                ...item,
-                amount
-            });
-        }
-    }
-
-    return {
-        inventory,
-        totalValue: inventory.reduce(
-            (sum, item) => sum + item.value * item.amount,
-            0
-        ),
-        coin: data.user.coin,
-        point: data.user.Point
-    };
-}
-
-function sellAll(userId) {
-    const data = getUser(userId);
-    const items = readJson(itemsPath, []);
-
-    let total = 0;
-    const sold = [];
-
-    for (const item of items) {
-        const amount =
-            data.user.TrashInventory[item.id] || 0;
-
-        if (amount <= 0) {
-            continue;
-        }
-
-        const value = amount * item.value;
-
-        total += value;
-
-        sold.push({
-            ...item,
-            amount,
-            total: value
-        });
-    }
-
-    if (total <= 0) {
-        return {
-            success: false,
-            reason: 'EMPTY'
-        };
-    }
-
-    data.user.Point += total;
-    data.user.TrashInventory = {};
-
-    writeJson(usersPath, data.users);
-
-    return {
-        success: true,
-        sold,
-        total
-    };
-}
-
 module.exports = {
-    searchTrash,
-    getInventory,
-    sellAll
+    searchTrash
 };

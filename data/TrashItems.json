@@ -3,42 +3,42 @@
         "id": "paper",
         "name": "뼈만 남은 물고기",
         "emoji": "🦴",
-        "value": 10,
+        "value": 100,
         "weight": 4000
     },
     {
         "id": "can",
         "name": "빈 참치캔",
         "emoji": "🥫",
-        "value": 30,
+        "value": 300,
         "weight": 3000
     },
     {
         "id": "old_doll",
         "name": "고양이 낚싯대",
         "emoji": "🎣",
-        "value": 250,
+        "value": 2500,
         "weight": 800
     },
     {
         "id": "shiny_stone",
         "name": "킹냥이의 털공",
         "emoji": "🏐",
-        "value": 500,
+        "value": 5000,
         "weight": 250
     },
     {
         "id": "treasure",
         "name": "물고기",
         "emoji": "🐟",
-        "value": 1000,
+        "value": 10000,
         "weight": 100
     },
         {
         "id": "bottle",
         "name": "츄르봉지",
         "emoji": "🫧",
-        "value": 3000,
+        "value": 30000,
         "weight": 50
     }
 ]

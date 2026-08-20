@@ -93,13 +93,13 @@ module.exports = {
             }
 
             if (!data.user.allMissionsRewarded) {
-                users[userId].Coin = (users[userId].coin || 0) + 1;
+                users[userId].coin = (users[userId].coin || 0) + 2;
                 data.user.allMissionsRewarded = true;
 
                 saveJson(usersPath, users);
                 DailyMissionManager.saveData();
 
-                rewardGivenText = '\n🎁 **모든 미션 완료! 코인 1개가 지급되었습니다!**';
+                rewardGivenText = '\n🎁 **모든 미션 완료! 코인 2개가 지급되었습니다!**';
             } else {
                 rewardGivenText = '\n🎉 **모든 미션 완료 보상 수령 완료 (코인 +1)**';
             }

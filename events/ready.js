@@ -6,8 +6,8 @@ const { REST, Routes, Events, EmbedBuilder } = require('discord.js');
 
 const stocksPath = path.join(process.cwd(), 'data', 'Stocks.json');
 
-const STOCK_CHANNEL_ID = '여기에_채널_ID';
-const STOCK_UPDATE_HOURS = 3;
+const STOCK_CHANNEL_ID = '1512486687803048076';
+const STOCK_UPDATE_HOURS = 1;
 const STOCK_CHECK_INTERVAL = 1000 * 60 * 10;
 
 function readStocks() {
